@@ -34,7 +34,16 @@
 #define SDA 14
 #define SCL 13
 
-int GAME[3][3];
+#define NO_WINNERS 0
+#define PLAY_X 1
+#define PLAY_O 2
+#define DRAW 3
+
+int RUN_PROGRAM = false;
+int GAME[3][3] =  {{0, 0, 0},
+                  { 0, 0, 0},
+                  { 0, 0, 0}};
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const int dirsGame[] = { 3, 2, 2, 2, 4, 1, 1, 1 };
@@ -144,13 +153,24 @@ int playItem(const int item) {
   bool ok = false;
   int num = -1;
   int x, y;
+  bool hasAll = true;
+
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      if (GAME[i][j] == 0) hasAll = false;
+    }
+  }
+
+  if (hasAll) return DRAW;
 
   while (!ok)
   {
     num = randomNum();
 
-    x = num % 3;
-    y = num / 3;
+    y = num % 3;
+    x = num / 3;
 
     if (GAME[x][y] == 0)
     {
@@ -161,7 +181,7 @@ int playItem(const int item) {
 
   if (checkGame(item)) return item;
 
-  return 0;
+  return NO_WINNERS;
 }
 
 bool checkGame(const int item) {
@@ -173,19 +193,21 @@ bool checkGame(const int item) {
   int wInt;
 
   int x, y;
+  int yes = 0;
 
   int baseNum;
   int workingNum;
 
   int check[] = { 0, 0, 0 };
   
-  bool won = true;
+  bool won = false;
 
   //Check dires
   for (int i = 0; i < 8; ++i)
   {
-    baseNum = places[i];
+    baseNum = places[i] - 1;
 
+    //Serial.printf("Pass: %d, Base Num: %d ------------------- \n", i, baseNum);
     //ACtually check dirs
     for (int j = 0; j < 3; ++j)
     {
@@ -213,19 +235,23 @@ bool checkGame(const int item) {
           workingNum = baseNum - (j * 4);
           break;
         }
-
-        x = workingNum % 3;
-        y = workingNum / 3;
-
-        check[j] = GAME[x][y];
       }
+
+      y = workingNum % 3;
+      x = workingNum / 3;
+
+      check[j] = GAME[x][y];
+      //Serial.printf("X: %d, Y: %d, Res: %d\n", x, y, check[j]);
     }
 
     //Check if won
+    yes = 0;
     for (int k = 0; k < 3; ++k)
     {
-      if (check[k] != item) won = false;
+      if (check[k] == item) yes += 1;
     }
+
+    if (yes == 3) won = true;
   }
 
   return won;
@@ -233,7 +259,15 @@ bool checkGame(const int item) {
 
 //This function is called when ever the ESP discoveres 
 void callback(char* topic, byte* payload, unsigned int length) {
-  int itemCheck;
+  int itemCheck = NO_WINNERS;
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
 
   char retPay = (char)payload[0];
 
@@ -276,6 +310,26 @@ void callback(char* topic, byte* payload, unsigned int length) {
     {
       sendGameState = true;
       Serial.print("Return the state of the game.\n");
+      break;
+    }
+  }
+
+  //Display if person won
+  switch (itemCheck)
+  {
+    case PLAY_X:
+    {
+      Serial.print("~~~~~~~~~ X HAS WON! ~~~~~~~~~~~~\n");
+      break;
+    }
+    case PLAY_O:
+    {
+      Serial.print("~~~~~~~~~ O HAS WON! ~~~~~~~~~~~~\n");
+      break;
+    }
+    case DRAW:
+    {
+      Serial.print("~~~~~~~~~ DRAW! ~~~~~~~~~~~~\n");
       break;
     }
   }
@@ -322,12 +376,12 @@ void setup() {
 }
 
 void loop() {
-
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
 
+  //Send game state to GCP
   if (sendGameState)
   {
     int x, y;
@@ -343,20 +397,16 @@ void loop() {
 
     gameState[9] = '\0';
 
+    //Send game state
     client.publish("tttGame", gameState);
 
     sendGameState = false;
   }
 
-  /*
-  unsigned long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    ++value;
-    snprintf(msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
-    //Serial.print("Publish message: ");
-    //Serial.println(msg);
-    client.publish("outTopic", msg);
+  if (!RUN_PROGRAM)
+  {
+    if (checkGame(PLAY_X)) Serial.print("X Won\n");
+    else Serial.print("Nope.\n");
+    RUN_PROGRAM = true;
   }
-  */
 }
