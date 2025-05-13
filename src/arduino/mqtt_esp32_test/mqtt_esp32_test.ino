@@ -149,7 +149,7 @@ void initGame() {
 }
 
 //1 for x and 2 for o
-int playItem(const int item) {
+int playItem(const int item, const int pos) {
   bool ok = false;
   int num = -1;
   int x, y;
@@ -167,7 +167,8 @@ int playItem(const int item) {
 
   while (!ok)
   {
-    num = randomNum();
+    if (pos == 0) num = randomNum();
+    else num = pos - 1;
 
     y = num % 3;
     x = num / 3;
@@ -269,7 +270,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
+  if (length <= 0) return;
+
   char retPay = (char)payload[0];
+  int posToPlay = 0;
+
+  if (length > 0) posToPlay = payload[1] - '0';
 
   Serial.print("Reading results\n");
 
@@ -296,13 +302,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
     case '4':
     {
-      itemCheck = playItem(1); //X
+      itemCheck = playItem(PLAY_X, posToPlay); //X
       Serial.print("Played X randomly.\n");
       break;
     }
     case '5':
     {
-      itemCheck = playItem(2); //O
+      itemCheck = playItem(PLAY_O, posToPlay); //O
       Serial.print("Played O randomly.\n");
       break;
     }
