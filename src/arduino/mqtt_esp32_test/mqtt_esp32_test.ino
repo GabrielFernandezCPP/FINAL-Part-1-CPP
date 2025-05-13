@@ -403,10 +403,12 @@ void loop() {
     sendGameState = false;
   }
 
+  /*
   if (!RUN_PROGRAM)
   {
     if (checkGame(PLAY_X)) Serial.print("X Won\n");
     else Serial.print("Nope.\n");
     RUN_PROGRAM = true;
   }
+  */
 }
