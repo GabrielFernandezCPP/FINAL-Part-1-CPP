@@ -31,6 +31,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
+
 #define SDA 14
 #define SCL 13
 
@@ -50,10 +51,23 @@ const int dirsGame[] = { 3, 2, 2, 2, 4, 1, 1, 1 };
 const int places[] = { 7, 7, 8, 9, 9, 9, 6, 3 };
 
 bool sendGameState = false;
+bool FREEZE = false;
 char gameState[10];
 
-int randomNum() {
-  return (random() % 10);
+//const int BUILTIN_LED = 12;
+const char* ssid = "Socalled5";
+const char* password = "Ariesleo7755";
+const char* mqtt_server = "104.196.229.154";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE	(50)
+char msg[MSG_BUFFER_SIZE];
+int value = 0;
+
+int randomNumLocal() {
+  return (rand() % 10);
 }
 
 void printLCD(const char* mess) {
@@ -69,18 +83,6 @@ bool i2CAddrTest(uint8_t addr) {
 
   return false;
 }
-
-//const int BUILTIN_LED = 12;
-const char* ssid = "Socalled5";
-const char* password = "Ariesleo7755";
-const char* mqtt_server = "104.196.229.154";
-
-WiFiClient espClient;
-PubSubClient client(espClient);
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE	(50)
-char msg[MSG_BUFFER_SIZE];
-int value = 0;
 
 void setup_wifi() {
 
@@ -149,11 +151,13 @@ void initGame() {
 }
 
 //1 for x and 2 for o
-int playItem(const int item, const int pos) {
+int playItem(const int item, int pos) {
   bool ok = false;
   int num = -1;
   int x, y;
   bool hasAll = true;
+
+  Serial.print("Playing item.\n");
 
   for (int i = 0; i < 3; i++)
   {
@@ -163,11 +167,15 @@ int playItem(const int item, const int pos) {
     }
   }
 
-  if (hasAll) return DRAW;
+  if (hasAll)
+  {
+    Serial.print("All are filled!\n");
+    return DRAW;
+  }
 
   while (!ok)
   {
-    if (pos == 0) num = randomNum();
+    if (pos == 0) num = randomNumLocal();
     else num = pos - 1;
 
     y = num % 3;
@@ -177,9 +185,17 @@ int playItem(const int item, const int pos) {
     {
       ok = true;
       GAME[x][y] = item;
+      Serial.print("Found pos.\n");
     }
+    else
+    {
+      if (pos != 0) pos = 0;
+    }
+
+    Serial.printf(". Random Pos: %d\n", num);
   }
 
+  Serial.print("Checking game.\n");
   if (checkGame(item)) return item;
 
   return NO_WINNERS;
@@ -277,7 +293,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (length > 0) posToPlay = payload[1] - '0';
 
-  Serial.print("Reading results\n");
+  //Serial.print("Reading results\n");
 
   // Switch on the LED if an 1 was received as first character
   switch (retPay)
@@ -297,25 +313,50 @@ void callback(char* topic, byte* payload, unsigned int length) {
     case '3':
     {
       initGame();
-      Serial.print("Initialized the TIC TAC TOE game.\n");
+      printLCD("Initialized the TIC TAC TOE game.\n");
+      FREEZE = false;
       break;
     }
     case '4':
     {
+      if (FREEZE) return;
       itemCheck = playItem(PLAY_X, posToPlay); //X
-      Serial.print("Played X randomly.\n");
+      printLCD("Played X randomly.\n");
       break;
     }
     case '5':
     {
+      if (FREEZE) return;
       itemCheck = playItem(PLAY_O, posToPlay); //O
-      Serial.print("Played O randomly.\n");
+      printLCD("Played O randomly.\n");
       break;
     }
     case '6':
     {
+      if (FREEZE) return;
       sendGameState = true;
       Serial.print("Return the state of the game.\n");
+      break;
+    }
+    case '7':
+    {
+      if (FREEZE) return;
+      itemCheck = playItem(PLAY_X, posToPlay); //X
+      printLCD("Played X at pos.\n");
+      sendGameState = true;
+      break;
+    }
+    case '8':
+    {
+      if (FREEZE) return;
+      itemCheck = playItem(PLAY_O, posToPlay); //X
+      printLCD("Played O at pos.\n");
+      sendGameState = true;
+      break;
+    }
+    case '9':
+    {
+      FREEZE = false;
       break;
     }
   }
@@ -385,6 +426,7 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
+
   client.loop();
 
   //Send game state to GCP
@@ -409,12 +451,19 @@ void loop() {
     sendGameState = false;
   }
 
-  /*
-  if (!RUN_PROGRAM)
+  //Check if game has won.
+  if (!FREEZE)
   {
-    if (checkGame(PLAY_X)) Serial.print("X Won\n");
-    else Serial.print("Nope.\n");
-    RUN_PROGRAM = true;
+    if (checkGame(PLAY_X))
+    {
+      printLCD("X has won!");
+      FREEZE = true;
+    }
+
+    if (checkGame(PLAY_O))
+    {
+      printLCD("O has won!");
+      FREEZE = true;
+    }
   }
-  */
 }
