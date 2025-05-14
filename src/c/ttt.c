@@ -3,6 +3,8 @@
 #include <mosquitto.h>
 #include <stdbool.h>
 
+#include <unistd.h>
+
 #include <string.h>
 
 void printBoard(const char* board) {
@@ -237,6 +239,7 @@ int main() {
                 //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
                 //turn = 'o';
                 //}
+                sleep(1);
                 break;
             }
         }
