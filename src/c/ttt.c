@@ -128,21 +128,50 @@ int main() {
     char start;
     char mode;
 
+    char square;
+    char fullPayload[3];
+
+    char turn;
+
     int n = 1;
 
     mosquitto_subscribe(mosq, NULL, "tttGame", 1);
 
     printf("CPP - CS 2600 - Tic Tac Toe! MQTT STYLE! Version 0.0.0\n");
     printf("Who will start? (You are x) (x or o): ");
-    fgets(&start, n, stdin);
+    start = getchar();
 
     printf("Which mode do you want to do? (1 or 2 players): ");
-    fgets(&mode, n, stdin);
+    mode = getchar();
+
+    turn = start;
 
     while (true)
     {
-        n += 1000;
-        //printf("%d\n", n);
+        switch (mode)
+        {
+            case '1': //Play against computer.
+            {
+                if (turn == 'x')
+                {
+                    printf("\nYour turn. Input square!: ");
+                    square = getchar();
+                    fullPayload[0] = '4';
+                    fullPayload[1] = square;
+                    fullPayload[2] = '\0';
+
+                    mosquitto_publish(mosq, NULL, "inTopic", 1, &fullPayload, 1, false);
+                }
+            }
+            case '2': //Play against another player;
+            {
+                
+            }
+            case '3': //Play 100 games
+            {
+
+            }
+        }
     }
 
     return EXIT_SUCCESS;
