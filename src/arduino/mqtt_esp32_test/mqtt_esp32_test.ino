@@ -457,12 +457,14 @@ void loop() {
     if (checkGame(PLAY_X))
     {
       printLCD("X has won!");
+      client.publish("tttGame", "X has won!");
       FREEZE = true;
     }
 
     if (checkGame(PLAY_O))
     {
       printLCD("O has won!");
+      client.publish("tttGame", "O has won!");
       FREEZE = true;
     }
   }
