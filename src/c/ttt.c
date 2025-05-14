@@ -125,26 +125,28 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    char start;
-    char mode;
+    char start = 'x';
+    char mode = '1';
 
     char square;
-    char fullPayload[3];
 
     char turn;
 
     int n = 1;
+    int ret;
 
     mosquitto_subscribe(mosq, NULL, "tttGame", 1);
 
-    printf("CPP - CS 2600 - Tic Tac Toe! MQTT STYLE! Version 0.0.0\n");
-    printf("Who will start? (You are x) (x or o): ");
-    start = getchar();
+    //printf("CPP - CS 2600 - Tic Tac Toe! MQTT STYLE! Version 0.0.0\n");
+    //printf("Which mode do you want to do? (1 or 2 players): \n");
+    //fflush(stdout);
+    //scanf("%c", &mode);
 
-    printf("Which mode do you want to do? (1 or 2 players): ");
-    mode = getchar();
+    //while((c = getchar()) != '\n' && c != EOF)
 
     turn = start;
+
+    //printf("%c", mode);
 
     while (true)
     {
@@ -152,24 +154,40 @@ int main() {
         {
             case '1': //Play against computer.
             {
-                if (turn == 'x')
-                {
-                    printf("\nYour turn. Input square!: ");
-                    square = getchar();
-                    fullPayload[0] = '4';
-                    fullPayload[1] = square;
-                    fullPayload[2] = '\0';
+                //if (turn == 'x')
+                //{
+                printf("Your turn. Input square!: ");
+                scanf("%c", &square);
 
-                    mosquitto_publish(mosq, NULL, "inTopic", 1, &fullPayload, 1, false);
+                printf("%c\n", square);
+
+                while((c = getchar()) != '\n' && c != EOF)
+                {
+                    n += 1;
                 }
+
+                char *fullPayload = malloc(3);
+
+                strcpy(fullPayload, "7");
+                strcat(fullPayload, &square);
+
+                printf("%s\n", fullPayload);
+
+                mosquitto_publish(mosq, NULL, "inTopic", 2, &fullPayload, 1, false);
+                mosquitto_publish(mosq, NULL, "players", 1, "1", 1, false);
+                //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
+                //turn = 'o';
+                //}
+                free(fullPayload);
+                break;
             }
             case '2': //Play against another player;
             {
-                
+                break;
             }
             case '3': //Play 100 games
             {
-
+                break;
             }
         }
     }
