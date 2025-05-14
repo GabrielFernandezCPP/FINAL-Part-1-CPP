@@ -174,7 +174,7 @@ int main() {
                 printf("Your turn. Input square!: ");
                 scanf("%c", &square);
 
-                printf("%c\n", square);
+                //printf("%c\n", square);
 
                 while((c = getchar()) != '\n' && c != EOF)
                 {
@@ -197,7 +197,7 @@ int main() {
                     printf("X turn. Input square!: ");
                     scanf("%c", &square);
 
-                    printf("%c\n", square);
+                    //printf("%c\n", square);
 
                     while((c = getchar()) != '\n' && c != EOF)
                     {
@@ -215,7 +215,7 @@ int main() {
                     printf("O turn. Input square!: ");
                     scanf("%c", &square);
 
-                    printf("%c\n", square);
+                    //printf("%c\n", square);
 
                     while((c = getchar()) != '\n' && c != EOF)
                     {
