@@ -69,11 +69,20 @@ void onMessage(struct mosquitto *mosq, void *obj, const struct mosquitto_message
         //Copy the payload into a new var
         strcpy(message, payload);
         
-        //Convert the board for display
-        convertBoard(message);
+        if (strlen(payload) <= 0) return
 
-        //Display the board
-        printBoard(message);
+        if (payload[0] < ':')
+        {
+            //Convert the board for display
+            convertBoard(message);
+
+            //Display the board
+            printBoard(message);
+        }
+        else
+        {
+            printf("%s", message);
+        }
     }
 
 	//printf("%s %d %s\n", msg->topic, msg->qos, (char *)msg->payload);
@@ -129,6 +138,7 @@ int main() {
     char mode = '1';
 
     char square;
+    char fullPayload[3];
 
     char turn;
 
@@ -137,12 +147,15 @@ int main() {
 
     mosquitto_subscribe(mosq, NULL, "tttGame", 1);
 
-    //printf("CPP - CS 2600 - Tic Tac Toe! MQTT STYLE! Version 0.0.0\n");
-    //printf("Which mode do you want to do? (1 or 2 players): \n");
+    printf("CPP - CS 2600 - Tic Tac Toe! MQTT STYLE! Version 0.0.0\n");
+    printf("Which mode do you want to do? (1 or 2 players): \n");
     //fflush(stdout);
-    //scanf("%c", &mode);
+    scanf("%c", &mode);
 
-    //while((c = getchar()) != '\n' && c != EOF)
+    while((c = getchar()) != '\n' && c != EOF)
+    {
+        n += 1;
+    }
 
     turn = start;
 
@@ -166,27 +179,64 @@ int main() {
                     n += 1;
                 }
 
-                char *fullPayload = malloc(3);
-
-                strcpy(fullPayload, "7");
-                strcat(fullPayload, &square);
-
-                printf("%s\n", fullPayload);
+                sprintf(fullPayload, "%c%c", '7', square);
 
                 mosquitto_publish(mosq, NULL, "inTopic", 2, &fullPayload, 1, false);
                 mosquitto_publish(mosq, NULL, "players", 1, "1", 1, false);
                 //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
                 //turn = 'o';
                 //}
-                free(fullPayload);
                 break;
             }
             case '2': //Play against another player;
             {
+                if (turn == 'x')
+                {
+                    printf("X turn. Input square!: ");
+                    scanf("%c", &square);
+
+                    printf("%c\n", square);
+
+                    while((c = getchar()) != '\n' && c != EOF)
+                    {
+                        n += 1;
+                    }
+
+                    sprintf(fullPayload, "%c%c", '7', square);
+
+                    mosquitto_publish(mosq, NULL, "inTopic", 2, &fullPayload, 1, false);
+                    mosquitto_publish(mosq, NULL, "players", 1, "1", 1, false);
+                //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
+                    turn = 'o';
+                }
+                else
+                {
+                    printf("O turn. Input square!: ");
+                    scanf("%c", &square);
+
+                    printf("%c\n", square);
+
+                    while((c = getchar()) != '\n' && c != EOF)
+                    {
+                        n += 1;
+                    }
+
+                    sprintf(fullPayload, "%c%c", '7', square);
+
+                    mosquitto_publish(mosq, NULL, "inTopic", 2, &fullPayload, 1, false);
+                    mosquitto_publish(mosq, NULL, "players", 1, "1", 1, false);
+                //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
+                    turn = 'x';
+                }
                 break;
             }
             case '3': //Play 100 games
             {
+                mosquitto_publish(mosq, NULL, "inTopic", 1, 7, 1, false);
+                mosquitto_publish(mosq, NULL, "players", 1, "1", 1, false);
+                //mosquitto_publish(mosq, NULL, "inTopic", 1, "6", 1, false);
+                //turn = 'o';
+                //}
                 break;
             }
         }
